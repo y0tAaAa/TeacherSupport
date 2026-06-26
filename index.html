@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TeacherSupport Studio — MVP App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">TeacherSupport Studio</div>
+        <h1>Standalone MVP web app</h1>
+        <p>Standalone web app for lesson preparation: student profiles, lesson builder, checklists, history, analytics, and real LLM model integration.</p>
+        <div class="hero-tags">
+          <span>Standalone project</span>
+          <span>Tabbed UI</span>
+          <span>Local demo</span>
+          <span>Real model ready</span>
+        </div>
+      </div>
+      <div class="hero-metrics">
+        <div class="metric-card">
+          <div class="metric-value" id="metricStudents">0</div>
+          <div class="metric-label">Students</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" id="metricLessons">0</div>
+          <div class="metric-label">Lessons</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" id="metricAvgScore">0/10</div>
+          <div class="metric-label">Avg score</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" id="metricModel">Mock</div>
+          <div class="metric-label">Model mode</div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" aria-label="Application sections">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="students">Student profiles</button>
+      <button class="tab" data-tab="lesson">Lesson builder</button>
+      <button class="tab" data-tab="history">History</button>
+      <button class="tab" data-tab="analytics">Analytics</button>
+      <button class="tab" data-tab="model">Model setup</button>
+      <button class="tab" data-tab="chat">AI Chat</button>
+    </nav>
+
+    <main>
+      <section class="panel active" id="dashboard">
+        <div class="panel-grid">
+          <article class="card card-wide">
+            <h2>Quick start</h2>
+            <ol class="step-list">
+              <li>Add or select a student.</li>
+              <li>Generate a lesson plan or start from template.</li>
+              <li>Fill in pre/post checklists and save the session.</li>
+              <li>Check student history and score trends.</li>
+            </ol>
+            <div class="actions">
+              <button class="primary" id="btnQuickLesson">Generate lesson</button>
+              <button class="secondary" id="btnDemoData">Load demo data</button>
+              <button class="secondary" id="btnReset">Reset app</button>
+              <button class="secondary" id="btnExport">Export data</button>
+              <button class="secondary" id="btnImport">Import data</button>
+            </div>
+          </article>
+          <article class="card">
+            <h2>Current student</h2>
+            <div id="currentStudentSummary" class="student-summary"></div>
+          </article>
+        </div>
+        <div class="panel-grid mt">
+          <article class="card">
+            <h2>Lesson score trend</h2>
+            <div id="dashboardSparkline" class="sparkline-box"></div>
+          </article>
+          <article class="card">
+            <h2>Checklist health</h2>
+            <div id="healthSummary" class="mini-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="students">
+        <div class="panel-grid two-col">
+          <article class="card">
+            <h2>Student list</h2>
+            <div class="stack">
+              <div class="field-row">
+                <input id="studentSearch" type="text" placeholder="Search student...">
+                <button class="secondary" id="btnAddStudent">Add</button>
+              </div>
+              <div id="studentList" class="item-list"></div>
+            </div>
+          </article>
+          <article class="card">
+            <h2>Edit student profile</h2>
+            <div class="stack">
+              <label class="field">
+                <span>Name</span>
+                <input id="studentName" type="text">
+              </label>
+              <label class="field">
+                <span>Subject focus</span>
+                <select id="studentSubject">
+                  <option>English</option>
+                  <option>Math</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Profile notes</span>
+                <textarea id="studentNotes" rows="5"></textarea>
+              </label>
+              <label class="field">
+                <span>Checklist template (editor)</span>
+                <div id="checklistEditor" class="checklist-editor">
+                  <div class="checklist-add-row">
+                    <select id="checklistSection">
+                      <option value="pre">Pre-lesson</option>
+                      <option value="post">Post-lesson</option>
+                    </select>
+                    <select id="checklistType">
+                      <option value="checkbox">Checkbox</option>
+                      <option value="score">Score 0-10</option>
+                      <option value="choice">Choice yes/partly/no</option>
+                    </select>
+                    <input id="checklistText" type="text" placeholder="Question text">
+                    <label class="small"><input id="checklistRequired" type="checkbox"> required</label>
+                    <button class="secondary" id="btnAddChecklistItem">Add</button>
+                  </div>
+                  <div class="checklist-lists two-col">
+                    <div>
+                      <h4>Pre-lesson</h4>
+                      <div id="checklistPreList" class="checklist-list"></div>
+                    </div>
+                    <div>
+                      <h4>Post-lesson</h4>
+                      <div id="checklistPostList" class="checklist-list"></div>
+                    </div>
+                  </div>
+                </div>
+              </label>
+              <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+                <button class="secondary" id="btnToggleChecklistJson">Show advanced JSON</button>
+                <span class="muted" style="font-size:12px">Use the visual editor to manage checklist items. Advanced JSON is for power users.</span>
+              </div>
+              <label class="field" id="studentChecklistJsonWrap" style="display:none;margin-top:8px">
+                <span>Checklist template JSON (advanced)</span>
+                <textarea id="studentChecklistJson" rows="6" class="mono"></textarea>
+              </label>
+              <div class="actions">
+                <button class="primary" id="btnSaveStudent">Save student</button>
+                <button class="secondary" id="btnResetChecklist">Reset checklist</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="lesson">
+        <div class="panel-grid two-col">
+          <article class="card">
+            <h2>Lesson inputs</h2>
+            <div class="stack">
+              <label class="field"><span>Subject</span><select id="lessonSubject"><option>English</option><option>Math</option></select></label>
+              <label class="field"><span id="lessonTopicLabel">Topic</span><select id="lessonTopic"></select></label>
+              <label class="field"><span>Goal</span><input id="lessonGoal" type="text" value="Practice core concept and build confidence"></label>
+              <div class="grid-2">
+                <label class="field"><span id="lessonLevelLabel">Level</span><select id="lessonLevel"></select></label>
+                <label class="field"><span>Lesson language</span><select id="lessonLanguage"><option value="EN">English</option><option value="SK">Slovak</option></select></label>
+                <label class="field"><span>Duration</span><input id="lessonDuration" type="range" min="30" max="90" step="5" value="45"></label>
+              </div>
+              <div class="lesson-slider-row">
+                <span id="lessonDurationLabel">45 min</span>
+                <span id="lessonStudentLabel">Demo Student</span>
+              </div>
+              <label class="field"><span>Teacher notes</span><textarea id="lessonNotes" rows="4">Student responds well to short tasks and visual prompts.</textarea></label>
+              <div class="actions">
+                <button class="primary" id="btnGenerateLesson">Generate</button>
+                <button class="secondary" id="btnCopyPlan">Copy plan</button>
+                <button class="secondary" id="btnPrintPlan">Print / PDF</button>
+                <button class="secondary" id="btnSaveLesson">Save lesson</button>
+              </div>
+            </div>
+          </article>
+          <article class="card">
+            <h2>Lesson plan</h2>
+            <div id="subjectFocus" class="subject-focus"></div>
+            <div id="lessonMeta" class="lesson-meta"></div>
+            <div id="lessonTimeline" class="timeline"></div>
+            <div class="split">
+              <div>
+                <h3>Pre-checklist</h3>
+                <div id="preChecklist"></div>
+              </div>
+              <div>
+                <h3>Post-checklist</h3>
+                <div id="postChecklist"></div>
+              </div>
+            </div>
+              <div class="emotion-wrap">
+                  <h3>Engagement reflection</h3>
+                  <div id="emotionMap" class="emotion-map"></div>
+                </div>
+              <div id="adaptationBlock" class="adaptation-block">
+                <h3>Adaptation suggestions</h3>
+                <div id="adaptationSummary" class="muted">No adaptation suggestions yet. Generate or save a lesson to see recommendations.</div>
+                <div id="adaptationBullets"></div>
+              </div>
+            <div id="validationBox" class="validation-box"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="history">
+        <div class="panel-grid two-col">
+          <article class="card">
+            <h2>Saved lessons</h2>
+            <div id="historyList" class="item-list"></div>
+          </article>
+          <article class="card">
+            <h2>History details</h2>
+            <div id="historyDetail" class="detail-box"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="analytics">
+        <div class="panel-grid">
+          <article class="card card-wide">
+            <h2>Analytics overview</h2>
+            <div class="stat-grid" id="analyticsStats"></div>
+          </article>
+          <article class="card card-wide">
+            <h2>Student trend</h2>
+            <div id="analyticsSparkline" class="sparkline-box"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" id="chat">
+        <div class="chat-shell">
+          <div class="chat-context-bar">
+            <span id="chatContextLabel" class="muted">Chatting about: <strong id="chatStudentName">Demo Student</strong></span>
+            <button class="secondary small" id="btnClearChat">Clear chat</button>
+          </div>
+          <div id="chatMessages" class="chat-messages">
+            <div class="chat-bubble assistant">
+              <div class="bubble-body">Hi! I'm your teaching assistant. Ask me anything about lesson planning, student progress, or educational strategies — I'll use your current student's context to help.</div>
+            </div>
+          </div>
+          <div class="chat-input-row">
+            <textarea id="chatInput" class="chat-textarea" placeholder="Ask about lesson planning, student progress, strategies…" rows="2"></textarea>
+            <button class="primary" id="btnChatSend">Send</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="model">
+        <div class="panel-grid two-col">
+          <article class="card">
+            <h2>Real model prompt</h2>
+            <p class="muted">This prompt is prepared for integration with a real LLM backend. Use it as a system prompt or a developer prompt.</p>
+            <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button class="primary" id="btnModelMock">Mock (recommended)</button>
+              <button class="secondary" id="btnModelTest">Test (developers)</button>
+              <button class="secondary" id="btnModelReal">Real (advanced)</button>
+              <span class="muted" style="font-size:12px">Choose Mock for everyday use. Test/Real are for advanced setups.</span>
+            </div>
+            <div id="advancedModelSettings" style="display:none">
+            <div class="grid-2" style="margin-bottom:12px">
+              <label class="field">
+                <span>Provider</span>
+                <select id="modelProvider">
+                  <option value="openai-compatible">OpenAI-compatible</option>
+                  <option value="huggingface">Hugging Face Inference</option>
+                  <option value="openrouter">OpenRouter</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>API base URL</span>
+                <input id="modelBaseUrl" type="text" placeholder="https://.../v1/chat/completions">
+              </label>
+            </div>
+            <label class="field" style="margin-bottom:12px">
+              <span>API key</span>
+                <input id="modelApiKey" type="password" placeholder="Optional if your backend is public/local" title="session only, not stored">
+            </label>
+            <label class="field" style="margin-bottom:12px">
+              <span>Test model preset</span>
+              <select id="modelPreset">
+                <option value="qwen2.5-0.5b-instruct">Qwen2.5-0.5B-Instruct</option>
+                <option value="qwen2.5-1.5b-instruct">Qwen2.5-1.5B-Instruct</option>
+                <option value="qwen2.5-3b-instruct" selected>Qwen2.5-3B-Instruct</option>
+                <option value="qwen2.5-7b-instruct">Qwen2.5-7B-Instruct</option>
+              </select>
+            </label>
+            <textarea id="realModelPrompt" class="mono prompt-box" readonly></textarea>
+            </div>
+            <div class="actions">
+              <button class="primary" id="btnCopyPrompt">Copy prompt</button>
+              <button class="secondary" id="btnUseTestModel">Use test model</button>
+              <button class="secondary" id="btnSaveModelConfig">Save config</button>
+              <button class="secondary" id="btnUseMock">Use mock mode</button>
+            </div>
+          </article>
+          <article class="card">
+            <h2>Integration notes</h2>
+            <div class="detail-box" id="modelNotes"></div>
+            <div class="detail-box" style="margin-top:12px">
+              <div class="detail-line"><strong>Free/open test options</strong></div>
+              <div class="detail-line">Qwen2.5-3B-Instruct and Qwen2.5-7B-Instruct are the recommended test presets; the Qwen2.5 family also includes 0.5B and 1.5B sizes for lighter local tests.</div>
+              <div class="detail-line">For production use, always check the model card and license before deployment.</div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

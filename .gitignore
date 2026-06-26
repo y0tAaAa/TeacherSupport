@@ -1,0 +1,16 @@
+# Data and research files (not part of the MVP)
+cleaned_dataset.csv
+datathon.ipynb
+dataset_summary_sk.md
+MANIFEST.TXT
+TeacherSupport_Business_Model_MVP_Doplnene.pdf
+TeacherSupport_Business_Model_MVP_Doplnene.extracted.txt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db

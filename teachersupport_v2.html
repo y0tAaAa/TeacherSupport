@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TeacherSupport Studio — Data & Business</title>
+<style>
+:root{
+  --bg:#f4efe7;
+  --bg-2:#e8f2ee;
+  --card:#fffdfa;
+  --text:#151515;
+  --muted:#66605a;
+  --line:#ded8cd;
+  --ink:#0f172a;
+  --accent:#0f766e;
+  --accent-2:#92400e;
+  --shadow:0 18px 40px rgba(32,24,12,.08);
+}
+ .invalid{outline:2px solid rgba(220,38,38,0.18);border-radius:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI Variable","Bahnschrift",system-ui,sans-serif;background:radial-gradient(circle at top left,var(--bg-2),transparent 35%),radial-gradient(circle at top right,#fff4d9,transparent 30%),var(--bg);color:var(--text);padding:20px;font-size:14px;line-height:1.5}
+.app{max-width:1450px;margin:0 auto}
+.shell{max-width:1450px;margin:0 auto;position:relative}
+.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.85fr);gap:16px;align-items:stretch;margin-bottom:16px}
+.hero-card{background:linear-gradient(145deg,rgba(255,253,250,.96),rgba(255,248,236,.9));border:1px solid rgba(222,216,205,.85);box-shadow:var(--shadow);border-radius:24px;padding:24px;position:relative;overflow:hidden}
+.hero-card::after{content:"";position:absolute;inset:auto -80px -90px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(15,118,110,.12),transparent 68%);pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(15,118,110,.1);color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.hero h1{font-size:clamp(28px,4vw,44px);line-height:1.04;margin:14px 0 12px;color:var(--ink)}
+.hero p{max-width:72ch;color:var(--muted);font-size:15px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:0 8px 18px rgba(32,24,12,.04);color:#332f2b;font-weight:600}
+.hero-side{display:grid;gap:12px}
+.side-card{background:linear-gradient(180deg,rgba(255,255,255,.93),rgba(252,247,236,.96));border:1px solid rgba(222,216,205,.85);box-shadow:var(--shadow);border-radius:22px;padding:18px}
+.side-title{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-2);font-weight:800;margin-bottom:10px}
+.side-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.metric{padding:14px;border-radius:18px;background:rgba(15,118,110,.06);border:1px solid rgba(15,118,110,.12)}
+.metric-v{font-size:22px;font-weight:800;color:var(--ink);line-height:1}
+.metric-l{margin-top:6px;color:var(--muted);font-size:12px}
+.tabs{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 16px;position:sticky;top:14px;z-index:8}
+.tab{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.78);backdrop-filter:blur(8px);color:var(--muted);padding:10px 14px;border-radius:999px;font-weight:700;cursor:pointer;box-shadow:0 8px 18px rgba(32,24,12,.04);transition:transform .18s ease,background .18s ease,color .18s ease,border-color .18s ease}
+.tab:hover{transform:translateY(-1px);color:var(--ink);border-color:#c7c0b3}
+.tab.on{background:linear-gradient(135deg,var(--accent),#0f5e59);color:#fff;border-color:transparent}
+.panel{display:none}
+.panel.on{display:block;animation:fadeIn .24s ease}
+.panel-shell{background:linear-gradient(180deg,rgba(255,253,250,.96),rgba(251,246,236,.92));border:1px solid rgba(222,216,205,.9);box-shadow:var(--shadow);border-radius:28px;padding:22px}
+.demo-grid,.mvp-grid,.bmc,.scale-grid{display:grid;gap:14px}
+.demo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card,.side-card,.bl,.mr,.mcard,.scard,.mc,.check-card,.tip-box,.info-bar,.ct,.not-in{border-radius:20px}
+.card,.bl,.mr,.mcard,.scard,.mc,.check-card,.tip-box,.info-bar,.ct,.not-in{background:rgba(255,255,255,.8);border:1px solid rgba(222,216,205,.9);box-shadow:0 10px 24px rgba(32,24,12,.05)}
+.card{padding:20px}
+.card h3,.section-h{font-size:18px;line-height:1.2;color:var(--ink);margin-bottom:10px}
+.lead{color:var(--muted);margin-bottom:14px}
+.section-h{margin-top:16px}
+.mini-grid{display:grid;gap:10px}
+.mini{padding:12px 14px;border-radius:16px;background:linear-gradient(180deg,#fff,#fbf6ec);border:1px solid rgba(222,216,205,.8)}
+.mini-v{font-size:24px;font-weight:800;color:var(--accent)}
+.mini-l{font-size:12px;color:var(--muted);margin-top:4px}
+.tip-box{padding:14px 16px;background:linear-gradient(180deg,rgba(15,118,110,.08),rgba(255,255,255,.82));color:#21322f}
+.not-in{padding:14px 16px;color:#48423b}
+.mvp-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
+.mc{padding:18px;min-height:132px}
+.mc h4{font-size:15px;margin-bottom:8px;color:var(--ink)}
+.mc p{color:var(--muted)}
+.bmc{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:12px}
+.bl{padding:16px;min-height:170px}
+.bl-title{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-2);font-weight:800;margin-bottom:10px}
+.vp-t{color:var(--accent)}
+.bl ul,.check-card ul{padding-left:18px;line-height:1.65;color:#35312c}
+.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.col-lbl{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;font-weight:700}
+.mr{padding:16px;margin-bottom:14px}
+.ml{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;display:inline-flex;padding:8px 12px;border-radius:999px;margin-bottom:10px}
+.mb{color:#2f2a26}
+.must{background:linear-gradient(135deg,#0f766e,#115e59)}
+.should{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}
+.could{background:linear-gradient(135deg,#d97706,#b45309)}
+.wont{background:linear-gradient(135deg,#64748b,#475569)}
+.must .mb,.should .mb,.could .mb,.wont .mb,.must li,.should li,.could li,.wont li{color:#fff}
+.ct{display:grid;gap:1px;overflow:hidden;background:rgba(222,216,205,.9);margin-top:12px}
+.cr{display:grid;grid-template-columns:2.3fr .7fr .9fr;gap:12px;background:rgba(255,255,255,.92);padding:12px 14px;align-items:center}
+.cr-h,.cr-total{font-weight:800;background:linear-gradient(180deg,#fffdf8,#f7efe1)}
+.cr-total{color:var(--accent)}
+.mg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mcard,.scard{padding:16px}
+.mv,.scard-v{font-size:20px;font-weight:800;color:var(--ink)}
+.mlb,.scard-l{color:var(--muted);margin-top:4px}
+.source,.scard-api{font-size:12px;color:var(--accent-2);margin-top:6px}
+.scale-grid{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:12px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media (max-width:1100px){.hero,.demo-grid,.bmc,.mg,.scale-grid,.mvp-grid{grid-template-columns:1fr 1fr}.cr{grid-template-columns:1.8fr .7fr .8fr}}
+@media (max-width:760px){body{padding:12px}.hero,.demo-grid,.mvp-grid,.bmc,.mg,.scale-grid,.cr,.two-col{grid-template-columns:1fr}.tabs{position:static}.panel-shell{padding:16px}.hero-card,.side-card,.panel-shell{border-radius:20px}}
+  </style>
+</head>
+<body>
+<div class="shell">
+<div class="hero">
+  <div class="hero-card">
+    <div class="eyebrow">TeacherSupport Studio</div>
+    <h1>Data & Business narrative for the product, without the demo MVP shell.</h1>
+    <p>Táto stránka spája dátovú validáciu, business model canvas, MVP koncept, MoSCoW a náklady. Demo rozhranie bolo odstránené, no ostatné strategické a prezentačné vrstvy zostávajú zachované.</p>
+    <div class="hero-actions">
+      <div class="pill">Dátová validácia</div>
+      <div class="pill">Business model</div>
+      <div class="pill">MVP concept</div>
+      <div class="pill">MoSCoW</div>
+      <div class="pill">Costing</div>
+    </div>
+  </div>
+  <div class="hero-side">
+    <div class="side-card">
+      <div class="side-title">Rýchly prehľad</div>
+      <div class="side-metrics">
+        <div class="metric"><div class="metric-v">91</div><div class="metric-l">odpovedí v datasete</div></div>
+        <div class="metric"><div class="metric-v">18</div><div class="metric-l">premenných</div></div>
+        <div class="metric"><div class="metric-v">7–10</div><div class="metric-l">typické hodnotenie užitočnosti</div></div>
+        <div class="metric"><div class="metric-v">5 min</div><div class="metric-l">cieľová príprava hodiny</div></div>
+      </div>
+    </div>
+    <div class="side-card">
+      <div class="side-title">Navigácia</div>
+      <div style="color:var(--muted);font-size:13px">Použi karty nižšie na prepínanie medzi dátami, business modelom, MVP konceptom, MoSCoW a nákladmi.</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="TeacherSupport sections">
+  <button class="tab on" type="button" onclick="sw(0)">Dáta a štatistiky</button>
+  <button class="tab" type="button" onclick="sw(1)">Business model</button>
+  <button class="tab" type="button" onclick="sw(2)">MVP concept</button>
+  <button class="tab" type="button" onclick="sw(3)">MoSCoW</button>
+  <button class="tab" type="button" onclick="sw(4)">Costs</button>
+</div>
+
+<div class="app">
+<div class="panel on" id="p0">
+  <div class="panel-shell">
+    <div class="demo-grid">
+      <div class="card">
+        <h3>Čo hovoria dáta</h3>
+        <p class="lead">Dotazník ukazuje, že AI vo vzdelávaní už má reálny základ, najmä ako nástroj na rýchlejšiu prípravu hodín, nie ako vzdialený experiment.</p>
+        <div class="mini-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+          <div class="mini"><div class="mini-v">91</div><div class="mini-l">odpovedí v datasete</div></div>
+          <div class="mini"><div class="mini-v">18</div><div class="mini-l">stĺpcov / premenných</div></div>
+          <div class="mini"><div class="mini-v">74/91</div><div class="mini-l">internet ako zdroj AI informácií</div></div>
+          <div class="mini"><div class="mini-v">40/91</div><div class="mini-l">sociálne siete ako zdroj AI informácií</div></div>
+          <div class="mini"><div class="mini-v">10/10</div><div class="mini-l">najčastejšia hodnota užitočnosti AI</div></div>
+          <div class="mini"><div class="mini-v">7–10/10</div><div class="mini-l">dominantné hodnotenie užitočnosti</div></div>
+        </div>
+        <div class="section-h">Interpretácia</div>
+        <div class="tip-box">Dáta sú vhodné ako dôkaz trhovej pripravenosti. Nepomáhajú priamo generovať učebné plány, ale veľmi dobre podporujú argument, prečo má TeacherSupport Studio zmysel pre učiteľov a doučovateľov.</div>
+        <div class="section-h">Kľúčové vzorce</div>
+        <div class="not-in" style="margin-top:0">
+          <strong>AI knowledge:</strong> najčastejšie 5, 6 a 7<br>
+          <strong>Feelings:</strong> respondenčné hodnoty 1–4, prevažuje pozitívnejšie vnímanie<br>
+          <strong>GPA:</strong> súvisí skôr mierne s AI užitočnosťou, bez silnej lineárnej väzby
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Grafy a čítanie dát</h3>
+        <p class="lead">Táto časť môže slúžiť ako stručný analytický blok do prezentácie, reportu alebo business model canvasu.</p>
+        <div class="mvp-grid">
+          <div class="mc"><h4>📊 Vnímaná užitočnosť AI</h4><p>Respondenti najčastejšie hodnotia AI ako veľmi užitočnú vo vzdelávaní.</p></div>
+          <div class="mc"><h4>🌐 Zdroje informácií</h4><p>Dominujú internet a sociálne siete, čo podporuje online distribúciu produktu.</p></div>
+          <div class="mc"><h4>🙂 Emócie a prijatie</h4><p>Emočná reakcia na AI je skôr pozitívna, čo naznačuje dobrú adopčnú pripravenosť.</p></div>
+          <div class="mc"><h4>🎯 Použitie v projekte</h4><p>Dáta sú vhodné na validáciu problému, positioning a prezentáciu potreby produktu.</p></div>
+        </div>
+        <div class="section-h">Čo z toho vyplýva pre projekt</div>
+        <div class="check-card">
+          <ul>
+            <li>TeacherSupport Studio má oporu v reálnych postojoch k AI v edukácii.</li>
+            <li>Najsilnejší argument je úspora času a jednoduchšia príprava hodín.</li>
+            <li>Údaje sú vhodné pre business model, nie ako tréningový dataset na generovanie lekcií.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="p1">
+  <div class="panel-shell">
+    <div class="info-bar" style="margin-bottom:14px">
+      <strong>Dátová validácia z dotazníka:</strong> 91 odpovedí ukazuje vysoký záujem o AI v edukácii, najmä cez internet (74/91) a sociálne siete (40/91). Vnímaná užitočnosť AI je najčastejšie 7–10/10 a najpozitívnejšie hodnotenie majú respondenti s najvyšším pocitom pohodlia pri AI.
+    </div>
+    <div class="bmc">
+      <div class="bl bl-kp">
+        <div class="bl-title">Kľúčoví partneri</div>
+        <ul>
+          <li>Pilotní učitelia a doučovatelia</li>
+          <li>Pedagogické fakulty</li>
+          <li>Vzdelávacie komunity a asociácie</li>
+          <li>AI infraštruktúra (OpenAI, cloud)</li>
+          <li>Akceleračné a mentoringové programy</li>
+        </ul>
+      </div>
+      <div class="bl bl-ka">
+        <div class="bl-title">Kľúčové aktivity</div>
+        <ul>
+          <li>Vývoj a údržba platformy</li>
+          <li>Správa AI promptov a výstupov</li>
+          <li>Onboarding a podpora učiteľov</li>
+          <li>Zber spätnej väzby a iterácia</li>
+          <li>Pilotné programy v praxi</li>
+        </ul>
+      </div>
+      <div class="bl bl-kr">
+        <div class="bl-title">Kľúčové zdroje</div>
+        <ul>
+          <li>AI API (OpenAI GPT-4o mini)</li>
+          <li>Webová platforma a databáza</li>
+          <li>Tím: dev + UX + pedagogický expert</li>
+          <li>Databáza šablón a lekcií</li>
+          <li>Spätná väzba pilotných učiteľov</li>
+        </ul>
+      </div>
+      <div class="bl bl-vp">
+        <div class="bl-title vp-t">Hodnotová propozícia</div>
+        <ul>
+          <li>Príprava hodiny za 5 min namiesto 2–3 hodín</li>
+          <li>Pominútový plán s otázkami, úlohami a DZ</li>
+          <li>Checklist emočného zapojenia žiaka</li>
+          <li>Adaptácia ďalšej hodiny z feedbacku</li>
+          <li>Učiteľ vždy kontroluje a schvaľuje výsledok</li>
+          <li>Zníženie burnoutu a rutinnej záťaže</li>
+        </ul>
+      </div>
+      <div class="bl bl-cr">
+        <div class="bl-title">Vzťah so zákazníkom</div>
+        <ul>
+          <li>Self-service onboarding do 10 minút</li>
+          <li>Feedback loop po každej lekcii</li>
+          <li>Personalizované odporúčania</li>
+          <li>E-mail a chat podpora</li>
+          <li>Komunita učiteľov</li>
+        </ul>
+      </div>
+      <div class="bl bl-ch">
+        <div class="bl-title">Distribučné kanály</div>
+        <ul>
+          <li>Webová platforma (priamy prístup)</li>
+          <li>Odporúčania medzi učiteľmi</li>
+          <li>FB/LinkedIn skupiny učiteľov</li>
+          <li>EdTech podujatia a prezentácie</li>
+        </ul>
+      </div>
+      <div class="bl bl-cs">
+        <div class="bl-title">Zákaznícke segmenty</div>
+        <ul>
+          <li><strong>Učitelia</strong> angličtiny a matematiky na ZŠ a SŠ</li>
+          <li><strong>Doučovatelia</strong> — individuálne a malé skupiny</li>
+          <li>Perspektíva: ďalšie predmety a krajiny</li>
+        </ul>
+      </div>
+      <div class="bl bl-cost">
+        <div class="bl-title">Štruktúra nákladov</div>
+        <div class="two-col">
+          <div>
+            <div class="col-lbl">Operatívne</div>
+            <ul>
+              <li>AI API (OpenAI)</li>
+              <li>Hosting a databáza</li>
+              <li>Podpora používateľov</li>
+              <li>Marketing</li>
+            </ul>
+          </div>
+          <div>
+            <div class="col-lbl">Investičné</div>
+            <ul>
+              <li>Vývoj platformy</li>
+              <li>UX/UI dizajn</li>
+              <li>Testovanie a GDPR</li>
+              <li>Tím a onboarding</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="bl bl-rev">
+        <div class="bl-title">Zdroje príjmov</div>
+        <div class="two-col">
+          <div>
+            <div class="col-lbl">Priame</div>
+            <ul>
+              <li>Freemium → mesačné predplatné</li>
+              <li>Ročné predplatné (zľava)</li>
+            </ul>
+          </div>
+          <div>
+            <div class="col-lbl">Nepriame / Early stage</div>
+            <ul>
+              <li>Granty a pilotné programy</li>
+              <li>Premium funkcie (export, analytika)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="p2">
+  <div class="panel-shell">
+    <div style="font-size:13px;color:#555;margin-bottom:14px">Webová platforma s AI API. Vlastný tréning modelu nie je súčasťou MVP.</div>
+    <div class="mvp-grid">
+      <div class="mc"><h4>👤 Registrácia a profil učiteľa</h4><p>Vytvorenie účtu, predmet, stupeň školy, jazykové nastavenia platformy.</p></div>
+      <div class="mc"><h4>🎓 Profil žiaka</h4><p>Vek, predmet, úroveň, ciele, záujmy, slabé miesta — základ pre personalizáciu.</p></div>
+      <div class="mc"><h4>⚡ Generátor lekcie</h4><p>Téma + dĺžka + cieľ → pominútový plán s otázkami, aktivitami a domácou úlohou.</p></div>
+      <div class="mc"><h4>✏️ Editovanie plánu</h4><p>Učiteľ môže AI-plán ľubovoľne upraviť alebo schváliť pred hodinou.</p></div>
+      <div class="mc"><h4>📋 Checklist pred hodinou</h4><p>3–5 otázok: nálada žiaka, motivácia, obtiažnosť témy.</p></div>
+      <div class="mc"><h4>📊 Checklist po hodine</h4><p>Čo fungovalo, kde žiak stratil záujem, čo zmeniť nabudúce.</p></div>
+      <div class="mc"><h4>🔄 Adaptácia ďalšej hodiny</h4><p>Na základe feedbacku systém navrhne konkrétne úpravy nasledujúcej lekcie.</p></div>
+      <div class="mc"><h4>📁 História lekcií</h4><p>Prehľad minulých hodín a poznámky k žiakovi v čase.</p></div>
+      <div class="mc"><h4>📤 Export lekcie</h4><p>Stiahnutie plánu do PDF alebo skopírovanie pre offline použitie.</p></div>
+      <div class="mc"><h4>🔒 GDPR a bezpečnosť</h4><p>Ochrana osobných dát žiakov, súhlas, šifrované ukladanie.</p></div>
+    </div>
+    <div class="not-in">
+      <strong>Mimo rozsahu MVP:</strong> vlastná trénovaná neurónová sieť · mobilná aplikácia · rozpoznávanie emócií cez kameru · integrácie so školskými systémami · platobná brána · marketplace materiálov
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="p3">
+  <div class="panel-shell">
+    <div class="mr must"><div class="ml">Must have</div><div class="mb">Registrácia · profil učiteľa a doučovateľa · profil žiaka · generovanie plánu hodiny · editovanie plánu · checklisty pred/po hodine · história lekcií · adaptácia ďalšej hodiny · export PDF · základné GDPR</div></div>
+    <div class="mr should"><div class="ml">Should have</div><div class="mb">
+      <ul style="padding-left:14px;line-height:1.6;margin:0">
+        <li>✅ Šablóny pre angličtinu a matematiku (implementované)</li>
+        <li>◻ Knižnica aktivít (plánované)</li>
+        <li>✅ Odporúčania na zlepšenie lekcie (z feedbacku) (implementované)</li>
+        <li>◻ Základná analytika žiaka (plánované)</li>
+        <li>◻ Admin panel (plánované)</li>
+        <li>◻ Rozhranie SK/EN (plánované)</li>
+        <li>✅ Ukážkové lekcie / onboarding (implementované via "Načítať iný príklad")</li>
+      </ul>
+    </div></div>
+    <div class="mr could"><div class="ml">Could have</div><div class="mb">
+      <ul style="padding-left:14px;line-height:1.6;margin:0">
+        <li>◻ Komunita učiteľov</li>
+        <li>◻ Hlasový vstup</li>
+        <li>◻ Kalendár lekcií</li>
+        <li>◻ Integrácia s Google Classroom</li>
+        <li>◻ Generovanie pracovných listov</li>
+        <li>◻ Rozšírené reporty</li>
+        <li>◻ Podpora ďalších predmetov</li>
+      </ul>
+    </div></div>
+    <div class="mr wont"><div class="ml">Won't have</div><div class="mb">Vlastná trénovaná neurónová sieť · real-time emotion recognition cez video · mobilná aplikácia · komplexné LMS integrácie · marketplace materiálov</div></div>
+  </div>
+</div>
+
+<div class="panel" id="p4">
+  <div class="panel-shell">
+    <div class="info-bar">
+      <strong>MVP: €30 000 – 48 000</strong> &nbsp;·&nbsp; Horizont: 4–5 mesiacov &nbsp;·&nbsp; Tím: 2 devs + 1 UX &nbsp;·&nbsp; Sadzba: €35/h (mid-level, CEE trh)
+    </div>
+
+    <div class="ct">
+      <div class="cr cr-h"><div>Práca</div><div>Hodiny</div><div>Náklad (€35/h)</div></div>
+      <div class="cr"><div>Product discovery + špecifikácia</div><div>40–60 h</div><div>€1 400–2 100</div></div>
+      <div class="cr"><div>UX/UI dizajn (wireframes → final)</div><div>60–90 h</div><div>€2 100–3 150</div></div>
+      <div class="cr"><div>Frontend (React / Next.js)</div><div>140–200 h</div><div>€4 900–7 000</div></div>
+      <div class="cr"><div>Backend + databáza + autorizácia</div><div>150–220 h</div><div>€5 250–7 700</div></div>
+      <div class="cr"><div>AI integrácia: prompty, generovanie, adaptácia</div><div>130–200 h</div><div>€4 550–7 000</div></div>
+      <div class="cr"><div>Checklisty + feedback logika</div><div>80–120 h</div><div>€2 800–4 200</div></div>
+      <div class="cr"><div>História lekcií + analytika</div><div>50–70 h</div><div>€1 750–2 450</div></div>
+      <div class="cr"><div>Testing, deployment, GDPR základy</div><div>90–130 h</div><div>€3 150–4 550</div></div>
+      <div class="cr"><div>Rezerva 15 %</div><div>—</div><div>€3 900–7 100</div></div>
+      <div class="cr cr-total"><div>Celkom MVP</div><div>740–1 090 h</div><div>€29 800–45 250</div></div>
+    </div>
+
+    <div class="section-h">Mesačné prevádzkové náklady (po spustení)</div>
+    <div class="mg">
+      <div class="mcard"><div class="mv">€30–150</div><div class="mlb">Hosting + databáza</div><div class="source">Vercel / Railway + Supabase</div></div>
+      <div class="mcard"><div class="mv">€4–360</div><div class="mlb">AI API náklady</div><div class="source">škála podľa počtu sessions</div></div>
+      <div class="mcard"><div class="mv">€500–1 500</div><div class="mlb">Podpora + bugfixy</div><div class="source">čiastočný úväzok deva</div></div>
+      <div class="mcard"><div class="mv">€100–500</div><div class="mlb">Marketing</div><div class="source">organický + komunity</div></div>
+      <div class="mcard"><div class="mv">€100–300</div><div class="mlb">Právne / GDPR</div><div class="source">jednorazovo + monitoring</div></div>
+      <div class="mcard"><div class="mv">~€0.0033</div><div class="mlb">AI náklad na 1 session</div><div class="source">3 volania GPT-4o mini</div></div>
+    </div>
+
+    <div class="section-h">Škálovanie AI nákladov podľa počtu sessions</div>
+    <div style="font-size:12px;color:#666;margin-bottom:8px">Výpočet: 3 volania AI / session × priem. 3 500 tokenov / volanie = 10 500 tokenov. GPT-4o mini: $0.15/1M vstup + $0.60/1M výstup (OpenAI pricing, 2025). Kurz $1 ≈ €0.93.</div>
+    <div class="scale-grid">
+      <div class="scard"><div class="scard-v">500 sessions</div><div class="scard-l">/ mesiac (early pilot)</div><div class="scard-api">AI: ~€1.5 / mes</div></div>
+      <div class="scard"><div class="scard-v">2 000 sessions</div><div class="scard-l">/ mesiac (~200 učiteľov)</div><div class="scard-api">AI: ~€6 / mes</div></div>
+      <div class="scard"><div class="scard-v">10 000 sessions</div><div class="scard-l">/ mesiac (rast)</div><div class="scard-api">AI: ~€31 / mes</div></div>
+      <div class="scard"><div class="scard-v">100 000 sessions</div><div class="scard-l">/ mesiac (škálovanie)</div><div class="scard-api">AI: ~€310 / mes</div></div>
+    </div>
+
+    <div class="tip-box" style="margin-top:12px">
+      <strong>Odporúčanie:</strong> Začni s OpenAI GPT-4o mini — cenovo najefektívnejšia voľba pre MVP. AI náklady sú pri tomto modeli takmer zanedbateľné aj pri tisíckach sessions mesačne. Vlastný fine-tuned model má zmysel riešiť až po validácii produktu s prvými 200–500 aktívnymi používateľmi a zbierke dostatočných tréningových dát.
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+function sw(i){
+  document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('on',j===i));
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('on',j===i));
+}
+</script>
+</body>
+</html>
