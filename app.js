@@ -42,7 +42,14 @@ const modelPresetCatalog = {
   'qwen2.5-0.5b-instruct': { label: 'Qwen2.5-0.5B-Instruct', note: 'Najľahší testovací preset pre rýchle lokálne overenie.' },
   'qwen2.5-1.5b-instruct': { label: 'Qwen2.5-1.5B-Instruct', note: 'Stále ľahký, vhodný pre skúšobný backend.' },
   'qwen2.5-3b-instruct': { label: 'Qwen2.5-3B-Instruct', note: 'Odporúčaný open test preset pre rýchly pilot.' },
-  'qwen2.5-7b-instruct': { label: 'Qwen2.5-7B-Instruct', note: 'Silnejší open test preset, kvalita je vyššia, nároky väčšie.' }
+  'qwen2.5-7b-instruct': { label: 'Qwen2.5-7B-Instruct', note: 'Silnejší open test preset, kvalita je vyššia, nároky väčšie.' },
+  'Qwen/Qwen2.5-Coder-7B-Instruct': { label: 'Qwen2.5-Coder-7B (HuggingFace)', note: 'Runs via HuggingFace Inference API — free tier, needs HF token.' },
+  'Qwen/Qwen2.5-Coder-32B-Instruct': { label: 'Qwen2.5-Coder-32B (HuggingFace)', note: 'Larger and stronger — HuggingFace Inference API, may require PRO tier.' }
+};
+
+const hfPresets = {
+  'Qwen/Qwen2.5-Coder-7B-Instruct': 'https://api-inference.huggingface.co/models/Qwen/Qwen2.5-Coder-7B-Instruct/v1/chat/completions',
+  'Qwen/Qwen2.5-Coder-32B-Instruct': 'https://api-inference.huggingface.co/models/Qwen/Qwen2.5-Coder-32B-Instruct/v1/chat/completions'
 };
 
 const subjectThemes = {
@@ -582,6 +589,9 @@ function resolveModelEndpoint() {
   if (!base) return '';
   const normalized = base.replace('http://localhost:8000', 'http://127.0.0.1:8000').replace('https://localhost:8000', 'https://127.0.0.1:8000');
   if (normalized.includes('/chat/completions')) return normalized;
+  if (normalized.includes('api-inference.huggingface.co/models') && !normalized.endsWith('/chat/completions')) {
+    return normalized.replace(/\/$/, '') + '/v1/chat/completions';
+  }
   return normalized.replace(/\/$/, '') + '/chat/completions';
 }
 
@@ -688,17 +698,20 @@ async function requestLessonFromModel(input, student) {
     response_format: { type: 'json_object' }
   };
 
+  const isHuggingFace = endpoint.includes('api-inference.huggingface.co');
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(app.modelApiKey ? { 'Authorization': `Bearer ${app.modelApiKey}` } : {})
+      ...(app.modelApiKey ? { 'Authorization': `Bearer ${app.modelApiKey}` } : {}),
+      ...(isHuggingFace ? { 'X-Wait-For-Model': 'true' } : {})
     },
     body: JSON.stringify(body)
   });
 
   if (!response.ok) {
-    throw new Error(`Model request failed: ${response.status}`);
+    const errText = await response.text().catch(() => '');
+    throw new Error(`Model request failed: ${response.status}${errText ? ' — ' + errText.slice(0, 120) : ''}`);
   }
 
   const data = await response.json();
@@ -1423,6 +1436,22 @@ function setTestModelPreset(presetKey) {
   }
 }
 
+function useHuggingFace() {
+  const preset = $('modelPreset')?.value || 'Qwen/Qwen2.5-Coder-7B-Instruct';
+  const hfUrl = hfPresets[preset] || hfPresets['Qwen/Qwen2.5-Coder-7B-Instruct'];
+  app.modelPreset = preset;
+  app.modelBaseUrl = hfUrl;
+  app.modelProvider = 'huggingface';
+  localStorage.setItem(MODEL_PRESET_KEY, preset);
+  localStorage.setItem(MODEL_BASE_URL_KEY, hfUrl);
+  localStorage.setItem(MODEL_PROVIDER_KEY, 'huggingface');
+  if ($('modelBaseUrl')) $('modelBaseUrl').value = hfUrl;
+  if ($('modelProvider')) $('modelProvider').value = 'huggingface';
+  if ($('modelPreset')) $('modelPreset').value = preset;
+  setSimpleModelMode('real');
+  setValidationMessage('HuggingFace endpoint set. Enter your HF token in the API key field and click Save config.', 'ok');
+}
+
 function saveModelConfig() {
   app.modelProvider = $('modelProvider')?.value || 'openai-compatible';
   app.modelBaseUrl = ($('modelBaseUrl')?.value || '').trim();
@@ -1581,6 +1610,8 @@ function bindEvents() {
   if (btnModelMock) btnModelMock.addEventListener('click', () => setSimpleModelMode('mock'));
   if (btnModelTest) btnModelTest.addEventListener('click', () => setSimpleModelMode('test'));
   if (btnModelReal) btnModelReal.addEventListener('click', () => setSimpleModelMode('real'));
+  const btnUseHuggingFace = document.getElementById('btnUseHuggingFace');
+  if (btnUseHuggingFace) btnUseHuggingFace.addEventListener('click', useHuggingFace);
 
   $('lessonSubject').addEventListener('change', () => {
     syncSubjectLessonFields($('lessonSubject').value);
@@ -1791,15 +1822,20 @@ async function requestChatFromModel(messages) {
     ],
     temperature: 0.5
   };
+  const isHuggingFace = endpoint.includes('api-inference.huggingface.co');
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(app.modelApiKey ? { Authorization: `Bearer ${app.modelApiKey}` } : {})
+      ...(app.modelApiKey ? { Authorization: `Bearer ${app.modelApiKey}` } : {}),
+      ...(isHuggingFace ? { 'X-Wait-For-Model': 'true' } : {})
     },
     body: JSON.stringify(body)
   });
-  if (!response.ok) throw new Error(`Chat model error: ${response.status}`);
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`Chat model error: ${response.status}${errText ? ' — ' + errText.slice(0, 120) : ''}`);
+  }
   const data = await response.json();
   return data?.choices?.[0]?.message?.content || null;
 }

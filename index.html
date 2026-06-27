@@ -294,10 +294,12 @@
             <label class="field" style="margin-bottom:12px">
               <span>Test model preset</span>
               <select id="modelPreset">
-                <option value="qwen2.5-0.5b-instruct">Qwen2.5-0.5B-Instruct</option>
-                <option value="qwen2.5-1.5b-instruct">Qwen2.5-1.5B-Instruct</option>
-                <option value="qwen2.5-3b-instruct" selected>Qwen2.5-3B-Instruct</option>
-                <option value="qwen2.5-7b-instruct">Qwen2.5-7B-Instruct</option>
+                <option value="qwen2.5-0.5b-instruct">Qwen2.5-0.5B-Instruct (local)</option>
+                <option value="qwen2.5-1.5b-instruct">Qwen2.5-1.5B-Instruct (local)</option>
+                <option value="qwen2.5-3b-instruct" selected>Qwen2.5-3B-Instruct (local)</option>
+                <option value="qwen2.5-7b-instruct">Qwen2.5-7B-Instruct (local)</option>
+                <option value="Qwen/Qwen2.5-Coder-7B-Instruct">Qwen2.5-Coder-7B (HuggingFace)</option>
+                <option value="Qwen/Qwen2.5-Coder-32B-Instruct">Qwen2.5-Coder-32B (HuggingFace)</option>
               </select>
             </label>
             <textarea id="realModelPrompt" class="mono prompt-box" readonly></textarea>
@@ -305,6 +307,7 @@
             <div class="actions">
               <button class="primary" id="btnCopyPrompt">Copy prompt</button>
               <button class="secondary" id="btnUseTestModel">Use test model</button>
+              <button class="secondary" id="btnUseHuggingFace">Use HuggingFace</button>
               <button class="secondary" id="btnSaveModelConfig">Save config</button>
               <button class="secondary" id="btnUseMock">Use mock mode</button>
             </div>
