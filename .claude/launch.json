@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "teachersupport",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "C:/Users/y0ta/Documents/GitHub/TeacherSupport"],
+      "port": 8765
+    }
+  ]
+}
