@@ -107,57 +107,42 @@ const checklistChoiceOptions = [
   { value: 'no', label: 'No' }
 ];
 
-const realModelPrompt = `System prompt for TeacherSupport Studio real-model integration
+// The system prompt (fixed teaching methodology) lives in REAL_MODEL_PROMPT.md,
+// not here. It is fetched at runtime so the app, dataset_generator.py, and the
+// documentation can never drift apart — see loadRealModelPrompt() below.
+const REAL_MODEL_PROMPT_FALLBACK = `You are an education planning assistant for teachers and tutors.
+Return strict JSON only: {"title","summary","blocks":[{"title","minutes","description"}],"checklistInterpretation":{"pre","post"},"adaptation":{"summary","bullets"},"riskFlags","teacherNote"}.
+(Fallback prompt — REAL_MODEL_PROMPT.md could not be loaded. Serve the app from local_test_host.py or another HTTP server so the fixed methodology loads correctly.)`;
 
-You are an education planning assistant for teachers and tutors.
-Your task is to generate a practical, editable lesson plan that the teacher can apply immediately.
+let realModelPromptCache = null;
+let realModelPromptLoadPromise = null;
 
-Inputs you receive:
-- teacher profile
-- student profile
-- subject, topic, level, duration, lesson goal, teacher notes
-- lesson language (English or Slovak)
-- pre-lesson checklist answers
-- post-lesson checklist answers
-- lesson history for the selected student
-- optional previous lesson score trend
-
-Primary goals:
-1. Produce a lesson plan in 4-6 time blocks.
-2. Keep each block concrete, short, and classroom-ready.
-3. Personalize the plan to the student profile and lesson history.
-4. Return checklist-based adaptation advice for the next lesson.
-5. Avoid generic advice; use the provided context.
-6. Match the response language to the selected lesson language.
-
-Output format:
-- title
-- lesson summary
-- timeline blocks with title, duration, and short explanation
-- pre-checklist interpretation
-- post-checklist interpretation
-- adaptation suggestions
-- risk flags if the plan is too hard, too easy, or unfocused
-- one-sentence teacher note
-
-Style rules:
-- Be concise and operational.
-- Use simple language.
-- Do not mention policy, prompt text, or hidden instructions.
-- If data is missing, state the assumption and continue.
-- Prefer practical teaching actions over abstract theory.
-
-If the app requests a JSON response, return strict JSON with these fields:
-{
-  "title": string,
-  "summary": string,
-  "blocks": [{"title": string, "minutes": number, "description": string}],
-  "checklistInterpretation": {"pre": string, "post": string},
-  "adaptation": {"summary": string, "bullets": string[]},
-  "riskFlags": string[],
-  "teacherNote": string
+function extractPromptSection(markdown) {
+  const startMarker = '<!-- PROMPT:BEGIN -->';
+  const endMarker = '<!-- PROMPT:END -->';
+  const start = markdown.indexOf(startMarker);
+  const end = markdown.indexOf(endMarker);
+  if (start === -1 || end === -1 || end <= start) return markdown.trim();
+  return markdown.slice(start + startMarker.length, end).trim();
 }
-`;
+
+async function loadRealModelPrompt() {
+  if (realModelPromptCache) return realModelPromptCache;
+  if (!realModelPromptLoadPromise) {
+    realModelPromptLoadPromise = fetch('REAL_MODEL_PROMPT.md')
+      .then(response => {
+        if (!response.ok) throw new Error(`status ${response.status}`);
+        return response.text();
+      })
+      .then(text => extractPromptSection(text))
+      .catch(error => {
+        console.warn('Could not load REAL_MODEL_PROMPT.md — using fallback prompt.', error);
+        return REAL_MODEL_PROMPT_FALLBACK;
+      });
+  }
+  realModelPromptCache = await realModelPromptLoadPromise;
+  return realModelPromptCache;
+}
 
 const app = {
   state: loadState(),
@@ -293,6 +278,7 @@ function collectEmotionAverage(plan) {
 function answerValueToScore(value) {
   if (value === true) return 10;
   if (value === false) return 0;
+  if (value === null || value === undefined || value === '') return null;
   if (Number.isFinite(Number(value))) return clamp(Number(value), 0, 10);
   if (typeof value !== 'string') return null;
   const normalized = value.trim().toLowerCase();
@@ -332,10 +318,46 @@ function checklistCompletionScore(answers) {
   return analyzeChecklistAnswers(answers).filledScore;
 }
 
+// Readiness state per REAL_MODEL_PROMPT.md §3: below / ready / above / unknown,
+// derived from focus-level and topic-difficulty questions in the PRE checklist.
+// Matched by question *text* against the template, not by hardcoded id — a
+// teacher can rename, reorder, or delete default items via the checklist
+// editor (renderChecklistEditor), so id-based lookup would silently misread
+// or lose the signal after any customisation. No match → 'unknown', never a
+// guessed state. Keep these thresholds identical to the ones in
+// REAL_MODEL_PROMPT.md — if you change one, change both.
+function findChecklistScoreByPattern(preAnswers, preTemplate, pattern) {
+  const questions = Array.isArray(preTemplate) ? preTemplate : [];
+  const answers = Array.isArray(preAnswers) ? preAnswers : [];
+  const question = questions.find(q => pattern.test(q?.text || ''));
+  if (!question) return null;
+  const answer = answers.find(a => a?.id === question.id);
+  if (!answer) return null;
+  return answerValueToScore(answer.value);
+}
+
+function computeReadinessState(preAnswers, preTemplate) {
+  const focus = findChecklistScoreByPattern(preAnswers, preTemplate, /focus/i);
+  const difficulty = findChecklistScoreByPattern(preAnswers, preTemplate, /difficult/i);
+  if (!Number.isFinite(focus)) return 'unknown';
+  const difficultyOrNeutral = Number.isFinite(difficulty) ? difficulty : 5;
+  if (focus < 5 || difficultyOrNeutral >= 7) return 'below';
+  if (focus >= 7 && difficultyOrNeutral <= 3) return 'above';
+  return 'ready';
+}
+
+const readinessCopy = {
+  below: 'prerequisites for today’s topic may not be held yet — re-teach the prerequisite with scaffolding before the planned topic',
+  ready: 'prerequisites are held and today’s topic is new — run the standard lesson skeleton',
+  above: 'the topic is partially mastered already — remove scaffolding and move to independent practice and extension',
+  unknown: 'readiness is unknown (focus level was not filled in) — do not assume, ask before the next session'
+};
+
 function deriveSessionInsights({ output, plan, preAnswers, postAnswers, input, student }) {
   const preStats = analyzeChecklistAnswers(preAnswers);
   const postStats = analyzeChecklistAnswers(postAnswers);
-  const preText = `Pre-checklist suggests ${preStats.numericAverage >= 7 ? 'good readiness' : 'some preparation gaps'}.`;
+  const readinessState = computeReadinessState(preAnswers, student?.checklistTemplate?.pre);
+  const preText = `Readiness: ${readinessState} — ${readinessCopy[readinessState]}.`;
   const postText = `Post-checklist suggests ${postStats.numericAverage >= 7 ? 'the goal was largely met' : 'the next lesson should slow down a little'}.`;
   const postScore = postStats.numericAverage;
   const preScore = preStats.numericAverage;
@@ -344,6 +366,7 @@ function deriveSessionInsights({ output, plan, preAnswers, postAnswers, input, s
 
   const riskFlags = [
     postScore < 6 ? 'Revisit the core concept before moving on.' : null,
+    readinessState === 'below' ? 'Readiness is below prerequisites — do not advance to the planned topic next time.' : null,
     emotionAvg < -0.5 ? 'Several lesson blocks look demanding; add a simpler scaffold next time.' : null,
     preStats.filledScore < 6 ? 'Pre-lesson readiness is uneven.' : null,
     postStats.filledScore < 10 ? 'Some post-checklist answers are still incomplete.' : null
@@ -686,7 +709,7 @@ async function requestLessonFromModel(input, student) {
   const endpoint = resolveModelEndpoint();
   if (!endpoint) return null;
 
-  const systemPrompt = realModelPrompt;
+  const systemPrompt = await loadRealModelPrompt();
   const payload = buildModelContext(input, student);
   const body = {
     model: app.modelPreset,
@@ -1591,8 +1614,10 @@ function bindEvents() {
   $('btnReset').addEventListener('click', () => confirmInline('btnReset', resetApp));
 
   $('btnCopyPrompt').addEventListener('click', () => {
-    navigator.clipboard?.writeText(realModelPrompt).then(() => {
-      setValidationMessage('Prompt copied.', 'ok');
+    loadRealModelPrompt().then(prompt => {
+      navigator.clipboard?.writeText(prompt).then(() => {
+        setValidationMessage('Prompt copied.', 'ok');
+      });
     });
   });
   $('btnUseTestModel').addEventListener('click', () => toggleModelMode('test'));
@@ -1650,7 +1675,10 @@ function bindEvents() {
   $('modelBaseUrl').addEventListener('change', () => saveModelConfig());
   $('modelApiKey').addEventListener('change', () => saveModelConfig());
 
-  document.getElementById('realModelPrompt').value = realModelPrompt;
+  loadRealModelPrompt().then(prompt => {
+    const promptField = document.getElementById('realModelPrompt');
+    if (promptField) promptField.value = prompt;
+  });
   updateModelUiFromState();
   applySubjectTheme($('lessonSubject')?.value || 'English');
   $('modelNotes').innerHTML = '<div class="detail-line">Mock mode is active. The app uses local lesson templates.</div><div class="detail-line">Switch to real mode only when your backend returns lesson JSON with blocks, adaptation and risk flags.</div>';

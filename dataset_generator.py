@@ -47,44 +47,43 @@ MAX_RETRIES = 3
 RETRY_DELAY = 30
 
 # ── System prompts ──────────────────────────────────────────────────────────────
+# The fixed teaching methodology is defined once, in REAL_MODEL_PROMPT.md, and
+# loaded from disk here so the training data always encodes the exact same
+# algorithm as the production app (app.js). Do not hardcode the methodology
+# text in this file — edit REAL_MODEL_PROMPT.md instead.
 
-LESSON_SYSTEM_PROMPT = """\
-You are an expert education planning assistant for teachers and private tutors.
-Your task is to generate a practical, structured lesson plan that the teacher can apply immediately.
+_PROMPT_MD_PATH = Path(__file__).parent / "REAL_MODEL_PROMPT.md"
+_PROMPT_BEGIN = "<!-- PROMPT:BEGIN -->"
+_PROMPT_END = "<!-- PROMPT:END -->"
+
+
+def _load_methodology() -> str:
+    text = _PROMPT_MD_PATH.read_text(encoding="utf-8")
+    start = text.index(_PROMPT_BEGIN) + len(_PROMPT_BEGIN)
+    end = text.index(_PROMPT_END)
+    return text[start:end].strip()
+
+
+_METHODOLOGY = _load_methodology()
+
+LESSON_SYSTEM_PROMPT = f"""\
+{_METHODOLOGY}
 
 You receive a JSON object describing the student profile, lesson parameters, and teacher notes.
-Return ONLY a valid JSON object with this exact structure:
-{
-  "title": "string",
-  "summary": "string",
-  "blocks": [
-    {"title": "string", "minutes": number, "description": "string"}
-  ],
-  "checklistInterpretation": {
-    "pre": "string",
-    "post": "string"
-  },
-  "adaptation": {
-    "summary": "string",
-    "bullets": ["string"]
-  },
-  "riskFlags": ["string"],
-  "teacherNote": "string"
-}
-
-Rules:
-- Produce 4–6 time blocks that sum to the requested duration.
-- Keep each block concrete, short, and classroom-ready.
-- Personalise to the student profile and notes.
-- Avoid generic advice; use the provided context.
-- Return strict JSON only — no markdown, no explanation outside the JSON object.
+Follow §12 (Production output format) exactly: return ONLY a valid JSON object with the
+{{title, summary, blocks, checklistInterpretation, adaptation, riskFlags, teacherNote}} structure.
+Produce 4-6 time blocks that sum to the requested duration, labelled with their R-step (§4).
+Return strict JSON only — no markdown, no explanation outside the JSON object.
 """
 
-QA_SYSTEM_PROMPT = """\
-You are an expert in pedagogy, modern teaching methods, and one-on-one tutoring.
-Answer the teacher's question with practical, evidence-based advice.
-Be concise (3–6 sentences), specific, and actionable.
-Avoid vague generalities. Focus on what a teacher can do in the next lesson.
+QA_SYSTEM_PROMPT = f"""\
+{_METHODOLOGY}
+
+You are answering an isolated question from a teacher or tutor, not generating a lesson plan.
+Answer using only the methodology above — do not introduce techniques or frameworks that
+are not in it (§11). Name the specific section you are applying (e.g. "per R2...",
+"per the below-readiness state in §3...", "per the black-list in §8..."). Be concise
+(3-6 sentences), specific, and actionable. Avoid vague generalities.
 """
 
 # ── Seed data ───────────────────────────────────────────────────────────────────
@@ -124,50 +123,13 @@ SUBJECTS = {
             "Prepare for exam",
             "Close gaps from previous lessons"
         ]
-    },
-    "Physics": {
-        "topics": [
-            "Newton's laws of motion", "Energy and work", "Waves and sound",
-            "Electricity and circuits", "Optics and light", "Thermodynamics",
-            "Kinematics", "Magnetism", "Pressure and fluids"
-        ],
-        "levels": ["Foundations", "Intermediate", "Advanced"],
-        "goals": [
-            "Connect theory to real-world examples",
-            "Practice problem solving with formulas",
-            "Build intuition for physical phenomena",
-            "Prepare for exam"
-        ]
-    },
-    "Chemistry": {
-        "topics": [
-            "Atomic structure", "Chemical bonds", "Chemical reactions",
-            "Acids and bases", "Organic chemistry basics",
-            "Periodic table and trends", "Stoichiometry", "Redox reactions"
-        ],
-        "levels": ["Foundations", "Intermediate", "Advanced"],
-        "goals": [
-            "Understand reactions at molecular level",
-            "Practice balancing equations",
-            "Connect lab observations to theory",
-            "Prepare for exam"
-        ]
-    },
-    "Slovak": {
-        "topics": [
-            "Skloňovanie podstatných mien", "Pravopis", "Slohové cvičenie",
-            "Literárne žánre", "Čítanie s porozumením", "Syntax vety",
-            "Slovné druhy", "Interpunkcia"
-        ],
-        "levels": ["ZŠ nižší stupeň", "ZŠ vyšší stupeň", "SŠ"],
-        "goals": [
-            "Precvičiť gramatické pravidlá",
-            "Zlepšiť písomný prejav",
-            "Porozumieť literárnemu textu",
-            "Pripraviť sa na test"
-        ]
     }
 }
+# Physics, Chemistry, and Slovak were removed: REAL_MODEL_PROMPT.md only defines
+# English (§5) and Math (§6) branches, matching what the app itself supports
+# (app.js SUBJECTS). Generating data for a subject with no defined branch would
+# force the model to invent a methodology — exactly what §11 prohibits. Add a
+# branch to REAL_MODEL_PROMPT.md first if another subject is needed.
 
 STUDENT_PROFILES = [
     {"notes": "Responds well to short tasks and visual prompts. Loses focus after 15 minutes."},
@@ -235,12 +197,9 @@ QA_QUESTIONS = [
     "What warm-up activities work well for a math lesson?",
     "How do I help a student who understands the concept but makes calculation errors?",
     "What visual tools help students understand algebraic thinking?",
-    # Subject-specific Physics / Chemistry
-    "How should I approach a lesson on Newton's laws for a student with no physics background?",
-    "What are the most effective analogies for explaining electric circuits?",
-    "How do I help a student who can memorise formulas but cannot apply them to problems?",
-    "What lab-style demonstrations can be done without a real lab in private tutoring?",
 ]
+# Physics/Chemistry-specific questions were removed along with the Physics and
+# Chemistry entries in SUBJECTS above — see the note there.
 
 # ── API call ────────────────────────────────────────────────────────────────────
 
