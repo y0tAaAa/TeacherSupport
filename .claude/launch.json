@@ -4,8 +4,14 @@
     {
       "name": "teachersupport",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "C:/Users/y0ta/Documents/GitHub/TeacherSupport"],
-      "port": 8765
+      "runtimeArgs": ["C:/Users/y0ta/Documents/GitHub/TeacherSupport/local_test_host.py"],
+      "port": 8000
+    },
+    {
+      "name": "teachersupport-ps",
+      "runtimeExecutable": "powershell.exe",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:/Users/y0ta/Documents/GitHub/TeacherSupport/tools/static_server.ps1", "-Port", "8123"],
+      "port": 8123
     }
   ]
 }
